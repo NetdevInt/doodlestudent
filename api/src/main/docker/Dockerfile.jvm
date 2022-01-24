@@ -48,7 +48,16 @@ ENV JAVA_OPTIONS="-Dquarkus.http.host=0.0.0.0 -Djava.util.logging.manager=org.jb
 COPY target/lib/* /deployments/lib/
 COPY target/*-runner.jar /deployments/app.jar
 
+COPY src/main/resources/application.yml /deployments/config/
+
+WORKDIR /deployments
+
+# VOLUME [ src="$(pwd)", target=../resources/application.yml, type=bing ]
+RUN curl -o wait-for https://raw.githubusercontent.com/eficode/wait-for/v2.2.1/wait-for
+RUN chmod a+x wait-for
+
+
 EXPOSE 8080
 USER 1001
 
-ENTRYPOINT [ "/deployments/run-java.sh" ]
+CMD [ "/deployments/run-java.sh" ]

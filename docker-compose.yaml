@@ -1,0 +1,52 @@
+version: "3.8"
+services:
+  db:
+    container_name: db
+    image: mysql
+    ports:
+      - "3306:3306"
+    environment:
+      - MYSQL_ROOT_PASSWORD=root
+      - MYSQL_DATABASE=tlc
+      - MYSQL_USER=tlc
+      - MYSQL_PASSWORD=tlc
+  
+  phpmyadmin:
+    depends_on:
+      - db
+    image: phpmyadmin/phpmyadmin
+    environment:
+      PMA_HOST: db
+    ports:
+      - 8081:80
+  
+  etherpad:
+    image: etherpad/etherpad:1.8
+    ports:
+      - "8083:9001"
+    volumes:
+      - ./api/APIKEY.txt:/opt/etherpad-lite/APIKEY.txt
+  
+  mail:
+    image: bytemark/smtp
+    # restart: always
+    ports:
+      - "2525:25"
+
+  api:
+    container_name: api
+    image: quarkus/code-with-quarkus-jvm
+    ports:
+      - 8080:8080
+    command: sh -c 'java -jar /deployments/app.jar'
+    depends_on: 
+      - db
+    # restart: always
+
+
+  front:
+    container_name: front
+    image: frontnode
+    ports:
+      - 8082:80
+
