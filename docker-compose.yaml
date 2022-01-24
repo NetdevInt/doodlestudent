@@ -38,10 +38,11 @@ services:
     image: quarkus/code-with-quarkus-jvm
     ports:
       - 8080:8080
-    command: sh -c 'java -jar /deployments/app.jar'
+    # command: sh -c 'java -jar /deployments/app.jar'
+    command: sh -c 'java -Dquarkus.datasource.jdbc.url="jdbc:mysql://db:3306/tlc?useUnicode=true&serverTimezone=Europe/Paris" -jar /deployments/app.jar'
     depends_on: 
       - db
-    # restart: always
+    restart: always
 
 
   front:
