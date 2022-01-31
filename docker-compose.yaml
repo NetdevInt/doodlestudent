@@ -10,44 +10,161 @@ services:
       - MYSQL_DATABASE=tlc
       - MYSQL_USER=tlc
       - MYSQL_PASSWORD=tlc
+    volumes:
+      - ./db-data:/var/lib/mysql
+    
   
   phpmyadmin:
+    container_name: phpmyadmin
     depends_on:
       - db
     image: phpmyadmin/phpmyadmin
     environment:
-      PMA_HOST: db
+      # PMA_HOST: db
+      # pour phpmyadmin url externe
+      - PMA_ABSOLUTE_URI=https://phpmyadmin.diverse-team.fr
     ports:
       - 8081:80
+    volumes:
+      - ./wp-files:/var/www/html
+
   
   etherpad:
+    container_name: etherpad
     image: etherpad/etherpad:1.8
     ports:
       - "8083:9001"
     volumes:
       - ./api/APIKEY.txt:/opt/etherpad-lite/APIKEY.txt
+   
   
+
   mail:
+    container_name: mail
     image: bytemark/smtp
-    # restart: always
+    restart: always
     ports:
       - "2525:25"
+  
 
-  api:
-    container_name: api
+  backend:
+    container_name: doodle_backend
     image: quarkus/code-with-quarkus-jvm
     ports:
-      - 8080:8080
+      - 8085:8080
     # command: sh -c 'java -jar /deployments/app.jar'
     command: sh -c 'java -Dquarkus.datasource.jdbc.url="jdbc:mysql://db:3306/tlc?useUnicode=true&serverTimezone=Europe/Paris" -jar /deployments/app.jar'
     depends_on: 
       - db
     restart: always
+    
 
 
   front:
     container_name: front
-    image: frontnode
+    image: frontnodesimple:latest
     ports:
-      - 8082:80
+      - 8080:80
+    volumes:
+      -  ./exampleconf/doodle.conf:/etc/nginx/conf.d/doodle.conf
+      -  ./exampleconf/pad.conf:/etc/nginx/conf.d/pad.conf
+      -  ./exampleconf/myadmin.conf:/etc/nginx/conf.d/myadmin.conf
+    # volumes:
+    #   - ./server-confs:/server-confs:ro
 
+
+
+
+
+#   front:
+#     container_name: front
+#     image: frontnode:latest
+#     ports:
+#       - 80:8080
+#       - 443:8443
+#     depends_on:
+#       - my-bunkerized-ui
+#     networks:
+#       - services-net
+#       - ui-net
+#     volumes:
+#       - ./www:/www:ro
+#       - ./certs:/etc/letsencrypt
+#       - ./server-confs:/server-confs:ro
+#       - bunkerized-vol:/etc/nginx
+#     environment:
+#       - SERVER_NAME=localhost
+#       # - AUTO_LETS_ENCRYPT=no
+#       - REDIRECT_HTTP_TO_HTTPS=no
+#       - DISABLE_DEFAULT_SERVER=no
+#       # - MAX_CLIENT_SIZE=50m
+#       - USE_CLIENT_CACHE=no
+#       # - USE_GZIP=yes
+#       # - USE_BROTLI=yes
+#       - REMOTE_PHP=phpmyadmin
+#       - REMOTE_PHP_PATH=/var/www/html
+#       # - USE_REMOTE_API=no
+#       # - USE_REVERSE_PROXY=yes
+#       # - REVERSE_PROXY_URL=/
+
+#       # Ensemble des endpoints pour lequel il générera des certificats
+#       # - SERVER_NAME=doodle.diverse-team.fr pad.diverse-team.fr phpmyadmin.diverse-team.fr
+#       - SERVE_FILES=yes
+#       # Transmission de l'IP publique vers les containers
+#       - PROXY_REAL_IP=yes
+#       # - MAX_CLIENT_SIZE=100m
+#       # - USE_ANTIBOT=captcha
+#       # Configuration de letencrypt
+#       - AUTO_LETS_ENCRYPT=no
+#       # redirect du 80 vers 443 automatique
+#       # - REDIRECT_HTTP_TO_HTTPS=yes
+#       - USE_LIMIT_REQ=no
+#       # Désactivation http2
+#       - HTTP2=no
+#       # Paramétrage des entêtes http
+#       - FEATURE_POLICY=accelerometer 'none'; ambient-light-sensor 'none'; autoplay 'none'; camera 'none'; display-capture 'none'; document-domain 'none'; encrypted-media 'none'; fullscreen 'none'; geolocation 'none'; gyroscope 'none'; magnetometer 'none'; microphone 'none'; midi 'none'; payment 'none'; picture-in-picture 'none'; speaker 'none'; sync-xhr 'self'; usb 'none'; vibrate 'none'; vr 'none'
+#       - localhost_USE_REVERSE_PROXY=yes
+#       - localhost_REVERSE_PROXY_URL=/admin-changeme/                  # change it to something hard to guess
+#       - localhost_REVERSE_PROXY_HOST=http://my-bunkerized-ui:5000
+#       - localhost_REVERSE_PROXY_HEADERS=X-Script-Name /admin-changeme # must match REVERSE_PROXY_URL
+#       - localhost_USE_MODSECURITY=no
+#       - MULTISITE=yes
+#       - USE_API=yes
+#     labels:
+#       - "bunkerized-nginx.UI"
+
+#   my-bunkerized-ui:
+#     image: bunkerity/bunkerized-nginx-ui
+#     restart: always
+#     depends_on:
+#       - my-docker-proxy
+#     networks:
+#       - ui-net
+#     volumes: 
+#       - bunkerized-vol:/etc/nginx
+#     environment:
+#       - ABSOLUTE_URI=https://localhost/admin-changeme/ # change it to your full URI
+#       - DOCKER_HOST=tcp://my-docker-proxy:2375
+#       - API_URI=/ChangeMeToSomethingHardToGuess                # must match API_URI from bunkerized-nginx
+#       - ADMIN_USERNAME=admin                                   # change it to something hard to guess
+#       - ADMIN_PASSWORD=admin                                # change it to a good password
+
+#   my-docker-proxy:
+#     image: tecnativa/docker-socket-proxy
+#     restart: always
+#     networks:
+#       - ui-net
+#     volumes:
+#       - /var/run/docker.sock:/var/run/docker.sock:ro
+#     environment:
+#       - CONTAINERS=1
+#       - SWARM=1
+#       - SERVICES=1
+
+# networks:
+#   ui-net:
+#   services-net:
+#     name: services-net
+
+# volumes:
+#   bunkerized-vol:

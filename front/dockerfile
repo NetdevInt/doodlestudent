@@ -11,3 +11,9 @@ RUN npm run build --prod
 #CMD [ "ng test" ]
 FROM nginx 
 COPY --from=builder /usr/front/dist/tlcfront/ /usr/share/nginx/html
+
+# FROM bunkerity/bunkerized-nginx
+# COPY --from=builder /usr/front/dist/tlcfront/ /www/
+
+
+
